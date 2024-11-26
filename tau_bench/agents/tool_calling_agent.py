@@ -17,12 +17,14 @@ class ToolCallingAgent(Agent):
         model: str,
         provider: str,
         temperature: float = 0.0,
+        api_base: Optional[str] = None,
     ):
         self.tools_info = tools_info
         self.wiki = wiki
         self.model = model
         self.provider = provider
         self.temperature = temperature
+        self.api_base = api_base
 
     def solve(
         self, env: Env, task_index: Optional[int] = None, max_num_steps: int = 30
@@ -36,16 +38,18 @@ class ToolCallingAgent(Agent):
             {"role": "system", "content": self.wiki},
             {"role": "user", "content": obs},
         ]
-        for _ in range(max_num_steps):
+        for index in range(max_num_steps):
             res = completion(
                 messages=messages,
                 model=self.model,
                 custom_llm_provider=self.provider,
                 tools=self.tools_info,
                 temperature=self.temperature,
+                api_base=self.api_base,
             )
             next_message = res.choices[0].message.model_dump()
-            total_cost += res._hidden_params["response_cost"]
+            if res._hidden_params["response_cost"]:
+                total_cost += res._hidden_params["response_cost"]
             action = message_to_action(next_message)
             env_response = env.step(action)
             reward = env_response.reward
@@ -64,6 +68,8 @@ class ToolCallingAgent(Agent):
                     ]
                 )
             else:
+                next_message.pop("tool_calls")
+                next_message.pop("function_call")
                 messages.extend(
                     [
                         next_message,
