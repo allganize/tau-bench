@@ -18,6 +18,7 @@ class ToolCallingAgent(Agent):
         provider: str,
         temperature: float = 0.0,
         api_base: Optional[str] = None,
+        api_key: Optional[str] = None,
     ):
         self.tools_info = tools_info
         self.wiki = wiki
@@ -25,6 +26,7 @@ class ToolCallingAgent(Agent):
         self.provider = provider
         self.temperature = temperature
         self.api_base = api_base
+        self.api_key = api_key
 
     def solve(
         self, env: Env, task_index: Optional[int] = None, max_num_steps: int = 30
@@ -46,6 +48,7 @@ class ToolCallingAgent(Agent):
                 tools=self.tools_info,
                 temperature=self.temperature,
                 api_base=self.api_base,
+                api_key=self.api_key
             )
             next_message = res.choices[0].message.model_dump()
             if res._hidden_params["response_cost"]:

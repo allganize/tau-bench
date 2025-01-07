@@ -121,6 +121,7 @@ def agent_factory(
             provider=args.model_provider,
             temperature=args.temperature,
             api_base=args.api_base,
+            api_key=args.api_key,
         )
     elif args.agent_strategy == "act":
         # `act` from https://arxiv.org/abs/2210.03629
