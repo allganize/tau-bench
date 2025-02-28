@@ -164,7 +164,7 @@ def agent_factory(
         raise ValueError(f"Unknown agent strategy: {args.agent_strategy}")
 
 
-def display_metrics(results: List[EnvRunResult]) -> None:
+def display_metrics(results: List[EnvRunResult], env_name: str) -> None:
     def is_successful(reward: float) -> bool:
         return (1 - 1e-6) <= reward <= (1 + 1e-6)
 
@@ -188,6 +188,24 @@ def display_metrics(results: List[EnvRunResult]) -> None:
     print("📈 Pass^k")
     for k, pass_hat_k in pass_hat_ks.items():
         print(f"  k={k}: {pass_hat_k}")
+    
+    results_path = "results.json"
+    results_data = {}
+    
+    if os.path.exists(results_path):
+        with open(results_path, "r") as f:
+            try:
+                results_data = json.load(f)
+            except json.JSONDecodeError:
+                results_data = {}
+    
+    results_data[env_name] = {
+        "score": avg_reward,
+        "count": len(rewards)
+    }
+    
+    with open(results_path, "w") as f:
+        json.dump(results_data, f, indent=4)
 
 
 def main():
@@ -238,6 +256,8 @@ def main():
         choices=["train", "test", "dev"],
         help="The split of tasks to run (only applies to the retail domain for now",
     )
+    parser.add_argument("--api_base", type=str, default=None)
+    parser.add_argument("--api_key", type=str, default=None)
     parser.add_argument("--start-index", type=int, default=0)
     parser.add_argument("--end-index", type=int, default=-1, help="Run all tasks if -1")
     parser.add_argument("--task-ids", type=int, nargs="+", help="(Optional) run only the tasks with the given IDs")
@@ -267,7 +287,7 @@ def main():
         ckpt_path=file_str,
     )
 
-    display_metrics(results)
+    display_metrics(results, args.env)
 
     with open(file_str, "w") as f:
         json.dump([result.model_dump() for result in results], f, indent=2)
